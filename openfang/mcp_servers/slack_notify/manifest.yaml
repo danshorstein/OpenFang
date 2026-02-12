@@ -1,0 +1,30 @@
+name: slack-notify
+version: 0.1.0
+description: >
+  Sends messages to Slack channels via the Slack Web API.
+  Used for alerts, notifications, and status updates from pipelines.
+
+capabilities:
+  - id: send_message
+    description: "Send a message to a Slack channel"
+    inputs:
+      - name: channel
+        type: string
+        required: true
+      - name: text
+        type: string
+        required: true
+      - name: thread_ts
+        type: string
+        required: false
+    outputs:
+      type: SendMessageResponse
+      fields: [ok, channel, ts, error, sent_at]
+
+requires:
+  env_vars:
+    - SLACK_BOT_TOKEN
+  python_packages:
+    - httpx>=0.27
+
+tags: [messaging, slack, notifications]

@@ -1,0 +1,30 @@
+name: brave-search
+version: 0.1.0
+description: >
+  Performs web searches via the Brave Search API.
+  Returns structured results with titles, URLs, and descriptions.
+
+capabilities:
+  - id: search
+    description: "Search the web and return structured results"
+    inputs:
+      - name: query
+        type: string
+        required: true
+      - name: count
+        type: integer
+        default: 10
+      - name: offset
+        type: integer
+        default: 0
+    outputs:
+      type: SearchResponse
+      fields: [query, results, total_count, retrieved_at]
+
+requires:
+  env_vars:
+    - BRAVE_SEARCH_API_KEY
+  python_packages:
+    - httpx>=0.27
+
+tags: [search, web, information-retrieval]

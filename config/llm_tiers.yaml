@@ -1,0 +1,53 @@
+# LLM Tier Configuration
+# Defines model routing rules for different task types.
+
+tiers:
+  opus:
+    model_id: "claude-opus-4-20250514"
+    max_tokens: 4096
+    temperature: 0.0
+    # When to use Opus
+    use_for:
+      - "strategic_review"
+      - "workflow_architecture"
+      - "complex_synthesis"
+      - "escalated_issues"
+    # Daily budget (max calls per day)
+    daily_budget: 10
+
+  sonnet:
+    model_id: "claude-sonnet-4-20250514"
+    max_tokens: 4096
+    temperature: 0.0
+    # When to use Sonnet
+    use_for:
+      - "codification"
+      - "supervision"
+      - "chat_responses"
+      - "error_triage"
+      - "automation_patching"
+    daily_budget: 100
+
+  haiku:
+    model_id: "claude-haiku-4-20250514"
+    max_tokens: 4096
+    temperature: 0.0
+    # When to use Haiku
+    use_for:
+      - "request_classification"
+      - "simple_formatting"
+      - "data_summarization"
+    daily_budget: 500
+
+# Routing rules
+routing:
+  # Default tier for unclassified requests
+  default_tier: "sonnet"
+
+  # Auto-downgrade: if Opus determines a task could be handled
+  # by a lower tier, note it for future routing
+  auto_downgrade: true
+
+  # Cost tracking
+  track_costs: true
+  cost_attribution: true  # Track costs per automation

@@ -1,0 +1,59 @@
+name: database
+version: 0.1.0
+description: >
+  SQLite database operations for storing and querying data
+  collected by pipelines and other MCP servers.
+
+capabilities:
+  - id: query
+    description: "Query records from a table with optional filtering"
+    inputs:
+      - name: table
+        type: string
+        required: true
+      - name: where
+        type: object
+        required: false
+      - name: limit
+        type: integer
+        default: 100
+    outputs:
+      type: QueryResponse
+      fields: [rows, count, retrieved_at]
+
+  - id: insert
+    description: "Insert a record into a table"
+    inputs:
+      - name: table
+        type: string
+        required: true
+      - name: data
+        type: object
+        required: true
+    outputs:
+      type: WriteResponse
+      fields: [success, rows_affected, timestamp]
+
+  - id: upsert
+    description: "Insert or update a record based on conflict column"
+    inputs:
+      - name: table
+        type: string
+        required: true
+      - name: data
+        type: object
+        required: true
+      - name: conflict_column
+        type: string
+        default: "id"
+    outputs:
+      type: WriteResponse
+      fields: [success, rows_affected, timestamp]
+
+requires:
+  env_vars:
+    - OPENFANG_DB_PATH
+  python_packages:
+    - aiosqlite>=0.20
+
+tags: [database, storage, sqlite]
