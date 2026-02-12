@@ -1,0 +1,29 @@
+# MCP Server Manifest Template
+# Copy and modify for your new MCP server.
+
+name: template-server
+version: 0.1.0
+description: >
+  Template MCP server. Replace this description with what
+  your server does and which external APIs it connects to.
+
+capabilities:
+  - id: example_action
+    description: "Example action — replace with actual capability"
+    inputs:
+      - name: query
+        type: string
+        required: true
+    outputs:
+      type: ExampleResponse
+      fields: [result, retrieved_at]
+
+requires:
+  env_vars: []
+    # - YOUR_API_KEY
+  python_packages: []
+    # - some-package>=1.0
+
+tags: []
+  # - analytics
+  # - social-media

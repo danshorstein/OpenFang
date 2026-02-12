@@ -1,0 +1,46 @@
+# OpenFang Configuration
+# Main configuration file for the OpenFang system.
+
+# Database
+database:
+  path: "openfang.db"
+  registry_path: "openfang_registry.db"
+
+# Logging
+logging:
+  level: "INFO"
+  log_dir: "logs"
+  format: "json"  # "json" or "text"
+
+# Orchestration
+orchestration:
+  pipelines_dir: "openfang/pipelines"
+  sandbox_timeout_seconds: 30
+  max_concurrent_pipelines: 5
+
+# Supervisor
+supervisor:
+  # How many times per day the supervisor reviews logs
+  reviews_per_day: 3
+  # Cron schedule for review cycles (default: 8am, 1pm, 6pm)
+  review_schedule:
+    - "0 8 * * *"
+    - "0 13 * * *"
+    - "0 18 * * *"
+  # Auto-patch without user approval for simple fixes
+  auto_patch_enabled: true
+  # Require approval for patches above this complexity
+  approval_threshold: "medium"  # "low", "medium", "high"
+
+# Dashboard
+dashboard:
+  host: "127.0.0.1"
+  port: 8080
+  # Enable WebSocket for live updates
+  websocket_enabled: true
+
+# MCP Servers
+mcp_servers:
+  directory: "openfang/mcp_servers"
+  # Auto-discover servers on startup
+  auto_discover: true

@@ -1,0 +1,46 @@
+# Default Cron Schedules
+# Reference schedules for common automation patterns.
+# Individual automations can override these.
+
+defaults:
+  # Health check all automations
+  health_check:
+    schedule: "*/30 * * * *"  # Every 30 minutes
+    description: "Check health of all active automations"
+
+  # Supervisor review cycles
+  supervisor_review:
+    schedule: "0 8,13,18 * * *"  # 8am, 1pm, 6pm
+    description: "LLM supervisor reviews logs and health"
+
+  # Daily digest
+  daily_digest:
+    schedule: "0 7 * * *"  # 7am daily
+    description: "Morning summary of all automation activity"
+
+  # Weekly synthesis
+  weekly_synthesis:
+    schedule: "0 9 * * 1"  # 9am Monday
+    description: "Weekly cross-domain analysis and insights"
+
+# Common patterns for user automations
+patterns:
+  frequent:
+    schedule: "*/15 * * * *"  # Every 15 minutes
+    description: "High-frequency monitoring"
+
+  hourly:
+    schedule: "0 * * * *"
+    description: "Hourly check"
+
+  every_4_hours:
+    schedule: "0 */4 * * *"
+    description: "Moderate frequency"
+
+  daily:
+    schedule: "0 7 * * *"
+    description: "Once daily (morning)"
+
+  weekly:
+    schedule: "0 9 * * 1"
+    description: "Once weekly (Monday morning)"
