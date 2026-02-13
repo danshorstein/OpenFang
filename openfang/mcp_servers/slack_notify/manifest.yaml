@@ -21,6 +21,13 @@ capabilities:
       type: SendMessageResponse
       fields: [ok, channel, ts, error, sent_at]
 
+  - id: list_channels
+    description: "List Slack channels accessible by the bot"
+    inputs: []
+    outputs:
+      type: ListChannelsResponse
+      fields: [channels, ok, retrieved_at]
+
 requires:
   env_vars:
     - SLACK_BOT_TOKEN

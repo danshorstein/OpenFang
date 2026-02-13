@@ -50,6 +50,39 @@ capabilities:
       type: WriteResponse
       fields: [success, rows_affected, timestamp]
 
+  - id: delete
+    description: "Delete records from a table matching a filter"
+    inputs:
+      - name: table
+        type: string
+        required: true
+      - name: where
+        type: object
+        required: true
+    outputs:
+      type: WriteResponse
+      fields: [success, rows_affected, timestamp]
+
+  - id: ensure_table
+    description: "Create a table if it doesn't already exist"
+    inputs:
+      - name: table
+        type: string
+        required: true
+      - name: columns
+        type: object
+        required: true
+    outputs:
+      type: WriteResponse
+      fields: [success, rows_affected, timestamp]
+
+  - id: list_tables
+    description: "List all tables in the database"
+    inputs: []
+    outputs:
+      type: TableListResponse
+      fields: [tables, retrieved_at]
+
 requires:
   env_vars:
     - OPENFANG_DB_PATH

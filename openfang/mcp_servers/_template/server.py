@@ -57,9 +57,9 @@ async def example_action(request: ExampleRequest) -> ExampleResponse:
 # The LLM sees these as tools it can call.
 
 try:
-    from mcp.server import Server
+    from mcp.server.fastmcp import FastMCP
 
-    server = Server("template-server")
+    server = FastMCP("template-server")
 
     @server.tool()
     async def mcp_example_action(query: str) -> str:
