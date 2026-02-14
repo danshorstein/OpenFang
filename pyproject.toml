@@ -44,6 +44,9 @@ dev = [
     "mypy>=1.10",
 ]
 
+[project.scripts]
+openfang = "openfang.cli:main"
+
 [project.urls]
 Homepage = "https://github.com/openfang/openfang"
 Repository = "https://github.com/openfang/openfang"

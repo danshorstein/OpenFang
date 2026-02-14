@@ -6,10 +6,28 @@ deployed automation pipelines. Integrates with the
 AutomationRegistry to discover and manage schedules.
 """
 
+import asyncio
 import logging
 from typing import Any
 
 logger = logging.getLogger("openfang.scheduler")
+
+
+def _parse_cron(cron_expr: str) -> dict[str, str] | None:
+    """Parse a 5-field cron expression into APScheduler trigger kwargs.
+
+    Returns None if the expression is invalid.
+    """
+    parts = cron_expr.strip().split()
+    if len(parts) != 5:
+        return None
+    return {
+        "minute": parts[0],
+        "hour": parts[1],
+        "day": parts[2],
+        "month": parts[3],
+        "day_of_week": parts[4],
+    }
 
 
 class CronScheduler:
@@ -25,79 +43,91 @@ class CronScheduler:
         self.executor = executor
         self.registry = registry
         self._scheduler: Any = None
+        self._running = False
+
+    @property
+    def running(self) -> bool:
+        return self._running
+
+    @property
+    def job_ids(self) -> list[str]:
+        """List IDs of all scheduled jobs."""
+        if not self._scheduler:
+            return []
+        return [job.id for job in self._scheduler.get_jobs()]
 
     async def start(self) -> None:
-        """
-        Start the scheduler and load all active automation schedules.
-
-        Reads cron schedules from the registry and registers them
-        with APScheduler.
-        """
+        """Start the scheduler and load all active automation schedules."""
         from apscheduler.schedulers.asyncio import AsyncIOScheduler
-        from apscheduler.triggers.cron import CronTrigger
 
         self._scheduler = AsyncIOScheduler()
 
-        automations = self.registry.list_active()
+        # Load schedules from the registry (async)
+        automations = await self.registry.list_active()
+        loaded = 0
         for automation in automations:
-            if automation.get("cron_schedule"):
-                self._add_job(automation, CronTrigger)
+            cron_schedule = automation.get("cron_schedule")
+            if cron_schedule:
+                added = self._add_job(automation["id"], cron_schedule)
+                if added:
+                    loaded += 1
 
         self._scheduler.start()
+        self._running = True
         logger.info(
-            f"Scheduler started with {len(automations)} active automations"
+            f"Scheduler started with {loaded} scheduled automations "
+            f"(of {len(automations)} active)"
         )
 
-    def _add_job(self, automation: dict[str, Any], trigger_class: type) -> None:
-        """Add a single automation job to the scheduler."""
-        cron_parts = automation["cron_schedule"].split()
-        if len(cron_parts) != 5:
+    def _add_job(self, automation_id: str, cron_schedule: str) -> bool:
+        """Add a single automation job to the scheduler. Returns True if added."""
+        from apscheduler.triggers.cron import CronTrigger
+
+        cron_kwargs = _parse_cron(cron_schedule)
+        if not cron_kwargs:
             logger.warning(
-                f"Invalid cron schedule for {automation['id']}: "
-                f"{automation['cron_schedule']}"
+                f"Invalid cron schedule for {automation_id}: {cron_schedule}"
             )
-            return
+            return False
 
-        trigger = trigger_class(
-            minute=cron_parts[0],
-            hour=cron_parts[1],
-            day=cron_parts[2],
-            month=cron_parts[3],
-            day_of_week=cron_parts[4],
-        )
+        trigger = CronTrigger(**cron_kwargs)
+
+        # APScheduler expects a sync callable; wrap async execute
+        def _run_pipeline() -> None:
+            loop = asyncio.get_event_loop()
+            asyncio.ensure_future(self.executor.execute(automation_id))
 
         self._scheduler.add_job(
-            self.executor.execute,
+            _run_pipeline,
             trigger=trigger,
-            args=[automation["id"]],
-            id=automation["id"],
+            id=automation_id,
             replace_existing=True,
         )
-        logger.info(
-            f"Scheduled {automation['id']} with cron: {automation['cron_schedule']}"
-        )
+        logger.info(f"Scheduled {automation_id} with cron: {cron_schedule}")
+        return True
 
     async def stop(self) -> None:
         """Stop the scheduler gracefully."""
-        if self._scheduler:
-            self._scheduler.shutdown(wait=True)
+        if self._scheduler and self._running:
+            self._scheduler.shutdown(wait=False)
+            self._running = False
             logger.info("Scheduler stopped")
 
-    def add_automation(self, automation_id: str, cron_schedule: str) -> None:
-        """Add or update a scheduled automation at runtime."""
-        from apscheduler.triggers.cron import CronTrigger
-
-        automation = {
-            "id": automation_id,
-            "cron_schedule": cron_schedule,
-        }
-        self._add_job(automation, CronTrigger)
+    def add_automation(self, automation_id: str, cron_schedule: str) -> bool:
+        """Add or update a scheduled automation at runtime. Returns True if added."""
+        if not self._scheduler:
+            logger.warning("Scheduler not started — cannot add job")
+            return False
+        return self._add_job(automation_id, cron_schedule)
 
     def remove_automation(self, automation_id: str) -> None:
         """Remove a scheduled automation."""
         if self._scheduler:
-            self._scheduler.remove_job(automation_id)
-            logger.info(f"Removed schedule for {automation_id}")
+            try:
+                self._scheduler.remove_job(automation_id)
+                logger.info(f"Removed schedule for {automation_id}")
+            except Exception:
+                logger.warning(f"Job {automation_id} not found in scheduler")
 
     def pause_automation(self, automation_id: str) -> None:
         """Pause a scheduled automation."""
@@ -110,3 +140,15 @@ class CronScheduler:
         if self._scheduler:
             self._scheduler.resume_job(automation_id)
             logger.info(f"Resumed {automation_id}")
+
+    def get_next_run(self, automation_id: str) -> str | None:
+        """Get the next scheduled run time for an automation."""
+        if not self._scheduler:
+            return None
+        try:
+            job = self._scheduler.get_job(automation_id)
+            if job and job.next_run_time:
+                return job.next_run_time.isoformat()
+        except Exception:
+            pass
+        return None
